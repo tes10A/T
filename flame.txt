@@ -11,6 +11,22 @@ local button
 local menu
 local boxTp, arrowTp, listTp
 
+-- VARIÁVEIS PERSISTENTES (PERSISTEM APÓS RESPAWN)
+local persistentStates = {
+	aura = false,
+	tp = false,
+	dist = false,
+	crosshair = false,
+	aimbot = false
+}
+
+local auraHighlights = {}
+local selectedTpPlayer = nil
+local distLabels = {}
+local crosshairGui = nil
+local aimbotTarget = nil
+local invisibleParts = {}
+
 local function createUI()
 	if screenGui then
 		screenGui:Destroy()
@@ -296,11 +312,10 @@ local function createUI()
 	local crosshairSliderContainer, getCrosshairSize, setCrosshairSize = createSlider("Size")
 	local aimbotToggle, aimbotKnob = createToggle("AimBot")
 
-	local function toggleLogic(toggle, knob)
-		local state = false
+	local function toggleLogic(toggle, knob, key)
 		toggle.MouseButton1Click:Connect(function()
-			state = not state
-			if state then
+			persistentStates[key] = not persistentStates[key]
+			if persistentStates[key] then
 				knob:TweenPosition(UDim2.new(1, -22, 0.5, -10), "Out", "Quad", 0.15, true)
 				toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
 			else
@@ -308,21 +323,21 @@ local function createUI()
 				toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 			end
 		end)
-		return function() return state end
+		
+		-- RESTAURAR ESTADO PERSISTENTE
+		if persistentStates[key] then
+			knob:TweenPosition(UDim2.new(1, -22, 0.5, -10), "Out", "Quad", 0.15, true)
+			toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+		end
+		
+		return function() return persistentStates[key] end
 	end
 
-	local auraState = toggleLogic(auraToggle, auraKnob)
-	local tpState = toggleLogic(tpToggle, tpKnob)
-	local distState = toggleLogic(distToggle, distKnob)
-	local crosshairState = toggleLogic(crosshairToggle, crosshairKnob)
-	local aimbotState = toggleLogic(aimbotToggle, aimbotKnob)
-
-	local auraHighlights = {}
-	local selectedTpPlayer = nil
-	local distLabels = {}
-	local crosshairGui = nil
-	local aimbotTarget = nil
-	local invisibleParts = {}
+	local auraState = toggleLogic(auraToggle, auraKnob, "aura")
+	local tpState = toggleLogic(tpToggle, tpKnob, "tp")
+	local distState = toggleLogic(distToggle, distKnob, "dist")
+	local crosshairState = toggleLogic(crosshairToggle, crosshairKnob, "crosshair")
+	local aimbotState = toggleLogic(aimbotToggle, aimbotKnob, "aimbot")
 
 	local function fillList(list, box)
 		list:ClearAllChildren()
@@ -434,11 +449,11 @@ local function createUI()
 					part.Transparency = 1
 				end
 			end
-			for _, acc in ipairs(player.Character:FindFirstChildOfClass("Accessory") or {}) do
-				if not invisibleParts[acc] then
-					invisibleParts[acc] = acc
+			local accessories = player.Character:GetChildren()
+			for _, acc in ipairs(accessories) do
+				if acc:IsA("Accessory") then
+					acc:Destroy()
 				end
-				acc:Destroy()
 			end
 		end
 	end
@@ -504,33 +519,40 @@ local function createUI()
 		return closestEnemy
 	end
 
+	local auraUpdateTime = 0
+
 	RunService.RenderStepped:Connect(function()
-		-- AURA COM ATUALIZAÇÃO RÁPIDA E LIMITE DE DISTÂNCIA
+		-- AURA COM ATUALIZAÇÃO RÁPIDA (3 SEGUNDOS) E DISTÂNCIA 3000
 		if auraState() then
-			for _, p in ipairs(Players:GetPlayers()) do
-				if p ~= player and p.Character then
-					local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
-					local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
-					if playerHrp and targetHrp then
-						local distance = (targetHrp.Position - playerHrp.Position).Magnitude
-						if distance <= 500 then
-							if not auraHighlights[p] then
-								local hl = Instance.new("Highlight")
-								hl.FillColor = Color3.fromRGB(255, 0, 0)
-								hl.OutlineColor = Color3.fromRGB(255, 0, 0)
-								hl.Parent = p.Character
-								auraHighlights[p] = hl
-							end
-						else
-							if auraHighlights[p] then
-								auraHighlights[p]:Destroy()
-								auraHighlights[p] = nil
+			auraUpdateTime = auraUpdateTime + RunService.RenderStepped:Wait()
+			if auraUpdateTime >= 3 then
+				auraUpdateTime = 0
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p ~= player and p.Character then
+						local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
+						local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
+						if playerHrp and targetHrp then
+							local distance = (targetHrp.Position - playerHrp.Position).Magnitude
+							if distance <= 3000 then
+								if not auraHighlights[p] then
+									local hl = Instance.new("Highlight")
+									hl.FillColor = Color3.fromRGB(255, 0, 0)
+									hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+									hl.Parent = p.Character
+									auraHighlights[p] = hl
+								end
+							else
+								if auraHighlights[p] then
+									auraHighlights[p]:Destroy()
+									auraHighlights[p] = nil
+								end
 							end
 						end
 					end
 				end
 			end
 		else
+			auraUpdateTime = 0
 			for _, hl in pairs(auraHighlights) do
 				if hl then hl:Destroy() end
 			end
@@ -584,22 +606,21 @@ local function createUI()
 			destroyCrosshair()
 		end
 
+		-- AIMBOT: CÂMERA GRUDA NA HEAD DO ALVO, ACOMPANHA MOVIMENTO, CÂMERA ATRÁS
 		if aimbotState() then
 			makePlayerInvisible()
 			local targetEnemy = getEnemyInLineOfSight()
 
 			if targetEnemy and targetEnemy.Character and player.Character then
 				aimbotTarget = targetEnemy
-				local targetHead = targetEnemy.Character:FindFirstChild("Head")
+				local head = targetEnemy.Character:FindFirstChild("Head")
 				local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
 				
-				if targetHead and playerHrp then
-					-- CÂMERA NA COSTA, MIRANDO NA HEAD
-					local cameraDistance = 5
-					local cameraOffset = playerHrp.CFrame.LookVector * -cameraDistance
-					local newCameraPos = playerHrp.Position + cameraOffset + Vector3.new(0, 1.5, 0)
-					
-					camera.CFrame = CFrame.new(newCameraPos, targetHead.Position)
+				if head and playerHrp then
+					-- CÂMERA FICA ATRÁS DO JOGADOR, MAS FOCANDO NA CABEÇA DO ALVO
+					local backOffset = playerHrp.CFrame.LookVector * -5
+					local cameraPos = playerHrp.Position + backOffset + Vector3.new(0, 2, 0)
+					camera.CFrame = CFrame.new(cameraPos, head.Position)
 				end
 			end
 		else
@@ -636,7 +657,7 @@ end
 -- CRIAR UI INICIAL
 createUI()
 
--- RECONECTAR MENU APÓS RESPAWN
+-- RECONECTAR MENU APÓS RESPAWN (OPÇÕES PERSISTEM)
 player.CharacterAdded:Connect(function()
 	wait(0.5)
 	createUI()
