@@ -313,6 +313,7 @@ local distLabels = {}
 local crosshairGui = nil
 local aimbotTarget = nil
 local lastAuraUpdate = 0
+local auraUpdateInterval = 10
 
 local function fillList(list, box)
 	list:ClearAllChildren()
@@ -418,13 +419,16 @@ local function makePlayerInvisible()
 	if player.Character then
 		for _, part in ipairs(player.Character:GetDescendants()) do
 			if part:IsA("BasePart") then
-				part.CanCollide = false
+				part.Transparency = 1
+			elseif part:IsA("Decal") then
 				part.Transparency = 1
 			end
 		end
+		
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if humanoid then
 			humanoid.HealthDisplayDistance = 0
+			humanoid.NameDisplayDistance = 0
 		end
 	end
 end
@@ -433,13 +437,16 @@ local function makePlayerVisible()
 	if player.Character then
 		for _, part in ipairs(player.Character:GetDescendants()) do
 			if part:IsA("BasePart") then
-				part.CanCollide = true
+				part.Transparency = 0
+			elseif part:IsA("Decal") then
 				part.Transparency = 0
 			end
 		end
+		
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if humanoid then
 			humanoid.HealthDisplayDistance = 100
+			humanoid.NameDisplayDistance = 100
 		end
 	end
 end
@@ -462,7 +469,7 @@ local function isEnemy(targetPlayer)
 	return true
 end
 
-local function getEnemyInCameraDirection()
+local function getEnemyInLineOfSight()
 	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
 		return nil
 	end
@@ -490,32 +497,32 @@ local function getEnemyInCameraDirection()
 	return closestEnemy
 end
 
-local function recreateMenu()
-	screenGui.Parent = playerGui
-	menu.Parent = screenGui
-end
-
-RunService.RenderStepped:Connect(function()
+local function updateAura()
 	if auraState() then
-		local currentTime = tick()
-		if currentTime - lastAuraUpdate >= 10 then
-			lastAuraUpdate = currentTime
-			for p, hl in pairs(auraHighlights) do
-				if not p.Parent or not p.Character then
-					hl:Destroy()
-					auraHighlights[p] = nil
-				end
-			end
-		end
-		
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= player and p.Character then
-				if not auraHighlights[p] then
-					local hl = Instance.new("Highlight")
-					hl.FillColor = Color3.fromRGB(255, 0, 0)
-					hl.OutlineColor = Color3.fromRGB(255, 0, 0)
-					hl.Parent = p.Character
-					auraHighlights[p] = hl
+		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local playerPos = player.Character.HumanoidRootPart.Position
+			
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= player and p.Character then
+					local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
+					if targetHrp then
+						local distance = (targetHrp.Position - playerPos).Magnitude
+						
+						if distance <= 300 then
+							if not auraHighlights[p] then
+								local hl = Instance.new("Highlight")
+								hl.FillColor = Color3.fromRGB(255, 0, 0)
+								hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+								hl.Parent = p.Character
+								auraHighlights[p] = hl
+							end
+						else
+							if auraHighlights[p] then
+								auraHighlights[p]:Destroy()
+								auraHighlights[p] = nil
+							end
+						end
+					end
 				end
 			end
 		end
@@ -524,6 +531,15 @@ RunService.RenderStepped:Connect(function()
 			if hl then hl:Destroy() end
 		end
 		auraHighlights = {}
+	end
+end
+
+RunService.RenderStepped:Connect(function()
+	local currentTime = tick()
+	
+	if currentTime - lastAuraUpdate >= auraUpdateInterval then
+		lastAuraUpdate = currentTime
+		updateAura()
 	end
 
 	if tpState() and selectedTpPlayer and selectedTpPlayer.Character and player.Character then
@@ -575,15 +591,22 @@ RunService.RenderStepped:Connect(function()
 
 	if aimbotState() then
 		makePlayerInvisible()
-		local targetEnemy = getEnemyInCameraDirection()
+		local targetEnemy = getEnemyInLineOfSight()
 
 		if targetEnemy and targetEnemy.Character and player.Character then
 			aimbotTarget = targetEnemy
 			local head = targetEnemy.Character:FindFirstChild("Head")
+			local neck = targetEnemy.Character:FindFirstChild("Neck")
 			local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
+			
 			if head and playerHrp then
-				local offsetHead = head.Position + Vector3.new(0, -1.5, 0)
-				camera.CFrame = CFrame.new(camera.CFrame.Position, offsetHead)
+				local targetPoint = head.Position
+				if neck then
+					targetPoint = neck.Position
+				else
+					targetPoint = head.Position - (head.Size.Y / 2)
+				end
+				camera.CFrame = CFrame.new(camera.CFrame.Position, targetPoint)
 			end
 		end
 	else
@@ -593,12 +616,6 @@ RunService.RenderStepped:Connect(function()
 			camera.CameraSubject = player.Character:FindFirstChild("Humanoid")
 		end
 	end
-end)
-
-player.CharacterAdded:Connect(function(newCharacter)
-	wait(0.1)
-	recreateMenu()
-	makePlayerVisible()
 end)
 
 Players.PlayerRemoving:Connect(function(leftPlayer)
@@ -615,6 +632,12 @@ Players.PlayerRemoving:Connect(function(leftPlayer)
 	if selectedTpPlayer == leftPlayer then
 		selectedTpPlayer = nil
 		boxTp.Text = ""
+	end
+end)
+
+player.CharacterAdded:Connect(function(newCharacter)
+	if menu.Parent == nil or menu.Parent.Parent == nil then
+		menu.Parent = screenGui
 	end
 end)
 
