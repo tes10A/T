@@ -8,6 +8,7 @@ local camera = workspace.CurrentCamera
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.ResetOnSpawn = false
+screenGui.Name = "ModMenu"
 screenGui.Parent = playerGui
 
 local button = Instance.new("TextButton")
@@ -312,8 +313,8 @@ local selectedTpPlayer = nil
 local distLabels = {}
 local crosshairGui = nil
 local aimbotTarget = nil
-local lastAuraUpdate = 0
-local auraUpdateInterval = 10
+local playerOriginalTransparencies = {}
+local auraUpdateTimer = 0
 
 local function fillList(list, box)
 	list:ClearAllChildren()
@@ -415,16 +416,22 @@ local function updateCrosshairSize()
 	end
 end
 
+local function storePlayerTransparencies()
+	if player.Character then
+		playerOriginalTransparencies = {}
+		for _, part in ipairs(player.Character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				playerOriginalTransparencies[part] = part.Transparency
+			end
+		end
+	end
+end
+
 local function makePlayerInvisible()
 	if player.Character then
 		for _, part in ipairs(player.Character:GetDescendants()) do
 			if part:IsA("BasePart") then
 				part.Transparency = 1
-			elseif part:IsA("Accessory") then
-				local handle = part:FindFirstChild("Handle")
-				if handle then
-					handle.Transparency = 1
-				end
 			end
 		end
 	end
@@ -433,25 +440,11 @@ end
 local function makePlayerVisible()
 	if player.Character then
 		for _, part in ipairs(player.Character:GetDescendants()) do
-			if part:IsA("BasePart") and part.Parent:IsA("Humanoid") == false then
-				if part.Parent.Name ~= "Accessory" and part.Parent:FindFirstChild("Humanoid") == nil then
-					part.Transparency = 0
-				end
-			elseif part:IsA("Accessory") then
-				local handle = part:FindFirstChild("Handle")
-				if handle then
-					handle.Transparency = 0
-				end
-			end
-		end
-		
-		for _, part in ipairs(player.Character:GetChildren()) do
 			if part:IsA("BasePart") then
-				part.Transparency = 0
-			elseif part:IsA("Accessory") then
-				local handle = part:FindFirstChild("Handle")
-				if handle then
-					handle.Transparency = 0
+				if playerOriginalTransparencies[part] ~= nil then
+					part.Transparency = playerOriginalTransparencies[part]
+				else
+					part.Transparency = 0
 				end
 			end
 		end
@@ -465,7 +458,7 @@ local function isEnemy(targetPlayer)
 		
 		if targetHumanoid and playerHumanoid then
 			if targetHumanoid:FindFirstChild("Team") and playerHumanoid:FindFirstChild("Team") then
-				return targetHumanoid.Team ~= playerHumanoid.Team
+				return targetHumanoid.Team.Value ~= playerHumanoid.Team.Value
 			else
 				if targetPlayer:FindFirstChild("Team") and player:FindFirstChild("Team") then
 					return targetPlayer.Team.Value ~= player.Team.Value
@@ -476,7 +469,7 @@ local function isEnemy(targetPlayer)
 	return true
 end
 
-local function getEnemyInView()
+local function getNearestEnemyToMouse()
 	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
 		return nil
 	end
@@ -484,7 +477,7 @@ local function getEnemyInView()
 	local playerHrp = player.Character.HumanoidRootPart
 	local cameraDirection = camera.CFrame.LookVector
 	local closestEnemy = nil
-	local closestAngle = 60
+	local closestAngle = 45
 
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= player and p.Character and isEnemy(p) then
@@ -505,29 +498,27 @@ local function getEnemyInView()
 end
 
 local function updateAuraHighlights()
-	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-		return
-	end
+	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		local playerPos = player.Character.HumanoidRootPart.Position
+		local auraRange = 500
 
-	local playerPos = player.Character.HumanoidRootPart.Position
-	local maxDistance = 500
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				local dist = (p.Character.HumanoidRootPart.Position - playerPos).Magnitude
 
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-			local distance = (p.Character.HumanoidRootPart.Position - playerPos).Magnitude
-
-			if distance <= maxDistance then
-				if not auraHighlights[p] then
-					local hl = Instance.new("Highlight")
-					hl.FillColor = Color3.fromRGB(255, 0, 0)
-					hl.OutlineColor = Color3.fromRGB(255, 0, 0)
-					hl.Parent = p.Character
-					auraHighlights[p] = hl
-				end
-			else
-				if auraHighlights[p] then
-					auraHighlights[p]:Destroy()
-					auraHighlights[p] = nil
+				if dist <= auraRange then
+					if not auraHighlights[p] then
+						local hl = Instance.new("Highlight")
+						hl.FillColor = Color3.fromRGB(255, 0, 0)
+						hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+						hl.Parent = p.Character
+						auraHighlights[p] = hl
+					end
+				else
+					if auraHighlights[p] then
+						auraHighlights[p]:Destroy()
+						auraHighlights[p] = nil
+					end
 				end
 			end
 		end
@@ -536,9 +527,9 @@ end
 
 RunService.RenderStepped:Connect(function()
 	if auraState() then
-		local currentTime = tick()
-		if currentTime - lastAuraUpdate >= auraUpdateInterval then
-			lastAuraUpdate = currentTime
+		auraUpdateTimer = auraUpdateTimer + 1
+		if auraUpdateTimer >= 600 then
+			auraUpdateTimer = 0
 			updateAuraHighlights()
 		end
 	else
@@ -596,23 +587,17 @@ RunService.RenderStepped:Connect(function()
 	end
 
 	if aimbotState() then
+		storePlayerTransparencies()
 		makePlayerInvisible()
-		local targetEnemy = getEnemyInView()
+		local targetEnemy = getNearestEnemyToMouse()
 
 		if targetEnemy and targetEnemy.Character and player.Character then
 			aimbotTarget = targetEnemy
-			local neckPos = targetEnemy.Character:FindFirstChild("Neck")
-			local head = targetEnemy.Character:FindFirstChild("Head")
+			local neck = targetEnemy.Character:FindFirstChild("Neck")
 			local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
-			
-			if playerHrp then
-				local aimPos = head.Position
-				if neckPos then
-					aimPos = neckPos.Position + (head.Position - neckPos.Position) * 0.3
-				else
-					aimPos = head.Position + Vector3.new(0, -3, 0)
-				end
-				camera.CFrame = CFrame.new(camera.CFrame.Position, aimPos)
+			if neck and playerHrp then
+				local neckPos = neck.Position + Vector3.new(0, -1.5, 0)
+				camera.CFrame = CFrame.new(camera.CFrame.Position, neckPos)
 			end
 		end
 	else
@@ -642,9 +627,16 @@ Players.PlayerRemoving:Connect(function(leftPlayer)
 end)
 
 player.CharacterAdded:Connect(function(newCharacter)
-	wait(0.1)
-	if not aimbotState() then
-		makePlayerVisible()
+	playerOriginalTransparencies = {}
+	for _, part in ipairs(newCharacter:GetDescendants()) do
+		if part:IsA("BasePart") then
+			playerOriginalTransparencies[part] = part.Transparency
+		end
+	end
+	
+	local screenGuiCheck = player:FindFirstChild("PlayerGui"):FindFirstChild("ModMenu")
+	if not screenGuiCheck then
+		screenGui.Parent = player:WaitForChild("PlayerGui")
 	end
 end)
 
