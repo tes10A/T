@@ -504,40 +504,33 @@ local function createUI()
 		return closestEnemy
 	end
 
-	local auraUpdateTime = 0
-
 	RunService.RenderStepped:Connect(function()
-		-- AURA COM ATUALIZAÇÃO A CADA 10 SEGUNDOS E LIMITE DE DISTÂNCIA
+		-- AURA COM ATUALIZAÇÃO RÁPIDA E LIMITE DE DISTÂNCIA
 		if auraState() then
-			auraUpdateTime = auraUpdateTime + RunService.RenderStepped:Wait()
-			if auraUpdateTime >= 10 then
-				auraUpdateTime = 0
-				for _, p in ipairs(Players:GetPlayers()) do
-					if p ~= player and p.Character then
-						local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
-						local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
-						if playerHrp and targetHrp then
-							local distance = (targetHrp.Position - playerHrp.Position).Magnitude
-							if distance <= 500 then
-								if not auraHighlights[p] then
-									local hl = Instance.new("Highlight")
-									hl.FillColor = Color3.fromRGB(255, 0, 0)
-									hl.OutlineColor = Color3.fromRGB(255, 0, 0)
-									hl.Parent = p.Character
-									auraHighlights[p] = hl
-								end
-							else
-								if auraHighlights[p] then
-									auraHighlights[p]:Destroy()
-									auraHighlights[p] = nil
-								end
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= player and p.Character then
+					local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
+					local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
+					if playerHrp and targetHrp then
+						local distance = (targetHrp.Position - playerHrp.Position).Magnitude
+						if distance <= 500 then
+							if not auraHighlights[p] then
+								local hl = Instance.new("Highlight")
+								hl.FillColor = Color3.fromRGB(255, 0, 0)
+								hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+								hl.Parent = p.Character
+								auraHighlights[p] = hl
+							end
+						else
+							if auraHighlights[p] then
+								auraHighlights[p]:Destroy()
+								auraHighlights[p] = nil
 							end
 						end
 					end
 				end
 			end
 		else
-			auraUpdateTime = 0
 			for _, hl in pairs(auraHighlights) do
 				if hl then hl:Destroy() end
 			end
@@ -597,12 +590,16 @@ local function createUI()
 
 			if targetEnemy and targetEnemy.Character and player.Character then
 				aimbotTarget = targetEnemy
-				local head = targetEnemy.Character:FindFirstChild("Head")
+				local targetHead = targetEnemy.Character:FindFirstChild("Head")
 				local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
-				if head and playerHrp then
-					-- FOCO LEVEMENTE ABAIXO DA CABEÇA (PESCOÇO)
-					local neckOffset = head.Position - (head.CFrame.UpVector * 2)
-					camera.CFrame = CFrame.new(camera.CFrame.Position, neckOffset)
+				
+				if targetHead and playerHrp then
+					-- CÂMERA NA COSTA, MIRANDO NA HEAD
+					local cameraDistance = 5
+					local cameraOffset = playerHrp.CFrame.LookVector * -cameraDistance
+					local newCameraPos = playerHrp.Position + cameraOffset + Vector3.new(0, 1.5, 0)
+					
+					camera.CFrame = CFrame.new(newCameraPos, targetHead.Position)
 				end
 			end
 		else
