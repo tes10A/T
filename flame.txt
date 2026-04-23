@@ -6,640 +6,641 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local camera = workspace.CurrentCamera
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.ResetOnSpawn = false
-screenGui.Name = "ModMenu"
-screenGui.Parent = playerGui
+local screenGui
+local button
+local menu
+local boxTp, arrowTp, listTp
 
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(0, 55, 0, 55)
-button.Position = UDim2.new(0, 10, 0, 80)
-button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-button.Text = "A"
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.TextScaled = true
-button.Parent = screenGui
-
-local bc = Instance.new("UICorner", button)
-bc.CornerRadius = UDim.new(0, 12)
-
-local strokeBtn = Instance.new("UIStroke", button)
-strokeBtn.Color = Color3.fromRGB(150, 150, 150)
-strokeBtn.Thickness = 2
-strokeBtn.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-local dragging = false
-local dragInput
-local dragStart
-local startPos
-
-button.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = button.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-button.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and input == dragInput then
-		local delta = input.Position - dragStart
-		button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
-local menu = Instance.new("ScrollingFrame")
-menu.Size = UDim2.new(0, 300, 0, 320)
-menu.Position = UDim2.new(0.5, -150, 0.5, -160)
-menu.CanvasSize = UDim2.new(0, 0, 0, 0)
-menu.AutomaticCanvasSize = Enum.AutomaticSize.Y
-menu.ScrollBarThickness = 6
-menu.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-menu.Visible = false
-menu.Parent = screenGui
-
-local mc = Instance.new("UICorner", menu)
-mc.CornerRadius = UDim.new(0, 10)
-
-local ms = Instance.new("UIStroke", menu)
-ms.Color = Color3.fromRGB(150, 150, 150)
-ms.Thickness = 2
-
-local layout = Instance.new("UIListLayout", menu)
-layout.Padding = UDim.new(0, 8)
-layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "AimBot Script"
-title.TextColor3 = Color3.new(1, 1, 1)
-title.BackgroundTransparency = 1
-title.TextScaled = true
-title.Parent = menu
-
-local sep = Instance.new("Frame")
-sep.Size = UDim2.new(1, -40, 0, 2)
-sep.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
-sep.Parent = menu
-
-local function createToggle(text)
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, -30, 0, 45)
-	frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	frame.Parent = menu
-
-	local s = Instance.new("UIStroke", frame)
-	s.Color = Color3.fromRGB(150, 150, 150)
-
-	local c = Instance.new("UICorner", frame)
-	c.CornerRadius = UDim.new(0, 8)
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0.6, 0, 1, 0)
-	label.Position = UDim2.new(0, 10, 0, 0)
-	label.Text = text
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextScaled = true
-	label.BackgroundTransparency = 1
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = frame
-
-	local toggle = Instance.new("TextButton")
-	toggle.Size = UDim2.new(0, 50, 0, 24)
-	toggle.Position = UDim2.new(1, -60, 0.5, -12)
-	toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-	toggle.Text = ""
-	toggle.Parent = frame
-
-	local tc = Instance.new("UICorner", toggle)
-	tc.CornerRadius = UDim.new(1, 0)
-
-	local knob = Instance.new("Frame")
-	knob.Size = UDim2.new(0, 20, 0, 20)
-	knob.Position = UDim2.new(0, 2, 0.5, -10)
-	knob.BackgroundColor3 = Color3.new(1, 1, 1)
-	knob.Parent = toggle
-
-	local kc = Instance.new("UICorner", knob)
-	kc.CornerRadius = UDim.new(1, 0)
-
-	return toggle, knob
-end
-
-local function createSelector()
-	local main = Instance.new("Frame")
-	main.Size = UDim2.new(1, -30, 0, 45)
-	main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	main.Parent = menu
-
-	local s = Instance.new("UIStroke", main)
-	s.Color = Color3.fromRGB(150, 150, 150)
-
-	local c = Instance.new("UICorner", main)
-	c.CornerRadius = UDim.new(0, 8)
-
-	local box = Instance.new("TextBox")
-	box.Size = UDim2.new(0.7, 0, 0.7, 0)
-	box.Position = UDim2.new(0.05, 0, 0.15, 0)
-	box.PlaceholderText = "Search"
-	box.TextScaled = true
-	box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	box.TextColor3 = Color3.new(1, 1, 1)
-	box.Parent = main
-
-	local arrow = Instance.new("TextButton")
-	arrow.Size = UDim2.new(0, 30, 0, 30)
-	arrow.Position = UDim2.new(1, -40, 0.5, -15)
-	arrow.Text = "→"
-	arrow.TextScaled = true
-	arrow.BackgroundTransparency = 1
-	arrow.TextColor3 = Color3.new(1, 1, 1)
-	arrow.Parent = main
-
-	local list = Instance.new("Frame")
-	list.Size = UDim2.new(1, -30, 0, 0)
-	list.Visible = false
-	list.AutomaticSize = Enum.AutomaticSize.Y
-	list.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	list.Parent = menu
-
-	local ls = Instance.new("UIStroke", list)
-	ls.Color = Color3.fromRGB(150, 150, 150)
-
-	local lc = Instance.new("UICorner", list)
-	lc.CornerRadius = UDim.new(0, 8)
-
-	local l = Instance.new("UIListLayout", list)
-	l.Parent = list
-
-	return box, arrow, list
-end
-
-local function createSlider(labelText)
-	local container = Instance.new("Frame")
-	container.Size = UDim2.new(1, -30, 0, 50)
-	container.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	container.Parent = menu
-
-	local cs = Instance.new("UIStroke", container)
-	cs.Color = Color3.fromRGB(150, 150, 150)
-
-	local cc = Instance.new("UICorner", container)
-	cc.CornerRadius = UDim.new(0, 8)
-
-	local sliderBar = Instance.new("Frame")
-	sliderBar.Size = UDim2.new(0.6, 0, 0, 6)
-	sliderBar.Position = UDim2.new(0.05, 0, 0.5, -3)
-	sliderBar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	sliderBar.Parent = container
-
-	local sliderCorner = Instance.new("UICorner", sliderBar)
-	sliderCorner.CornerRadius = UDim.new(1, 0)
-
-	local sliderKnob = Instance.new("Frame")
-	sliderKnob.Size = UDim2.new(0, 14, 0, 14)
-	sliderKnob.Position = UDim2.new(0, 0, 0.5, -7)
-	sliderKnob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-	sliderKnob.Parent = sliderBar
-
-	local knobCorner = Instance.new("UICorner", sliderKnob)
-	knobCorner.CornerRadius = UDim.new(1, 0)
-
-	local inputBox = Instance.new("TextBox")
-	inputBox.Size = UDim2.new(0.25, 0, 0.6, 0)
-	inputBox.Position = UDim2.new(0.7, 0, 0.2, 0)
-	inputBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	inputBox.TextColor3 = Color3.new(1, 1, 1)
-	inputBox.TextScaled = true
-	inputBox.Text = "10"
-	inputBox.Parent = container
-
-	local boxCorner = Instance.new("UICorner", inputBox)
-	boxCorner.CornerRadius = UDim.new(0, 4)
-
-	local boxStroke = Instance.new("UIStroke", inputBox)
-	boxStroke.Color = Color3.fromRGB(150, 150, 150)
-
-	local value = 10
-
-	local function updateSlider(newValue)
-		value = math.max(10, math.min(100, newValue))
-		local ratio = (value - 10) / 90
-		sliderKnob.Position = UDim2.new(ratio, -7, 0.5, -7)
-		inputBox.Text = tostring(value)
-		return value
+local function createUI()
+	if screenGui then
+		screenGui:Destroy()
 	end
 
-	local draggingSlider = false
+	screenGui = Instance.new("ScreenGui")
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = playerGui
 
-	sliderKnob.InputBegan:Connect(function(input)
+	button = Instance.new("TextButton")
+	button.Size = UDim2.new(0, 55, 0, 55)
+	button.Position = UDim2.new(0, 10, 0, 80)
+	button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	button.Text = "A"
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.TextScaled = true
+	button.Parent = screenGui
+
+	local bc = Instance.new("UICorner", button)
+	bc.CornerRadius = UDim.new(0, 12)
+
+	local strokeBtn = Instance.new("UIStroke", button)
+	strokeBtn.Color = Color3.fromRGB(150, 150, 150)
+	strokeBtn.Thickness = 2
+	strokeBtn.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+	local dragging = false
+	local dragInput
+	local dragStart
+	local startPos
+
+	button.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			draggingSlider = true
+			dragging = true
+			dragStart = input.Position
+			startPos = button.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
 		end
 	end)
 
-	sliderKnob.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			draggingSlider = false
+	button.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
 		end
 	end)
 
 	UserInputService.InputChanged:Connect(function(input)
-		if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local barSize = sliderBar.AbsoluteSize.X
-			local barPosition = sliderBar.AbsolutePosition.X
-			local mousePos = input.Position.X
-			local ratio = math.max(0, math.min(1, (mousePos - barPosition) / barSize))
-			local newValue = 10 + (ratio * 90)
-			updateSlider(newValue)
+		if dragging and input == dragInput then
+			local delta = input.Position - dragStart
+			button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 		end
 	end)
 
-	inputBox.FocusLost:Connect(function()
-		local num = tonumber(inputBox.Text)
-		if num then
-			updateSlider(num)
-		else
+	menu = Instance.new("ScrollingFrame")
+	menu.Size = UDim2.new(0, 300, 0, 320)
+	menu.Position = UDim2.new(0.5, -150, 0.5, -160)
+	menu.CanvasSize = UDim2.new(0, 0, 0, 0)
+	menu.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	menu.ScrollBarThickness = 6
+	menu.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	menu.Visible = false
+	menu.Parent = screenGui
+
+	local mc = Instance.new("UICorner", menu)
+	mc.CornerRadius = UDim.new(0, 10)
+
+	local ms = Instance.new("UIStroke", menu)
+	ms.Color = Color3.fromRGB(150, 150, 150)
+	ms.Thickness = 2
+
+	local layout = Instance.new("UIListLayout", menu)
+	layout.Padding = UDim.new(0, 8)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, 0, 0, 30)
+	title.Text = "AimBot Script"
+	title.TextColor3 = Color3.new(1, 1, 1)
+	title.BackgroundTransparency = 1
+	title.TextScaled = true
+	title.Parent = menu
+
+	local sep = Instance.new("Frame")
+	sep.Size = UDim2.new(1, -40, 0, 2)
+	sep.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+	sep.Parent = menu
+
+	local function createToggle(text)
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.new(1, -30, 0, 45)
+		frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		frame.Parent = menu
+
+		local s = Instance.new("UIStroke", frame)
+		s.Color = Color3.fromRGB(150, 150, 150)
+
+		local c = Instance.new("UICorner", frame)
+		c.CornerRadius = UDim.new(0, 8)
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(0.6, 0, 1, 0)
+		label.Position = UDim2.new(0, 10, 0, 0)
+		label.Text = text
+		label.TextColor3 = Color3.new(1, 1, 1)
+		label.TextScaled = true
+		label.BackgroundTransparency = 1
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = frame
+
+		local toggle = Instance.new("TextButton")
+		toggle.Size = UDim2.new(0, 50, 0, 24)
+		toggle.Position = UDim2.new(1, -60, 0.5, -12)
+		toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		toggle.Text = ""
+		toggle.Parent = frame
+
+		local tc = Instance.new("UICorner", toggle)
+		tc.CornerRadius = UDim.new(1, 0)
+
+		local knob = Instance.new("Frame")
+		knob.Size = UDim2.new(0, 20, 0, 20)
+		knob.Position = UDim2.new(0, 2, 0.5, -10)
+		knob.BackgroundColor3 = Color3.new(1, 1, 1)
+		knob.Parent = toggle
+
+		local kc = Instance.new("UICorner", knob)
+		kc.CornerRadius = UDim.new(1, 0)
+
+		return toggle, knob
+	end
+
+	local function createSelector()
+		local main = Instance.new("Frame")
+		main.Size = UDim2.new(1, -30, 0, 45)
+		main.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		main.Parent = menu
+
+		local s = Instance.new("UIStroke", main)
+		s.Color = Color3.fromRGB(150, 150, 150)
+
+		local c = Instance.new("UICorner", main)
+		c.CornerRadius = UDim.new(0, 8)
+
+		boxTp = Instance.new("TextBox")
+		boxTp.Size = UDim2.new(0.7, 0, 0.7, 0)
+		boxTp.Position = UDim2.new(0.05, 0, 0.15, 0)
+		boxTp.PlaceholderText = "Search"
+		boxTp.TextScaled = true
+		boxTp.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		boxTp.TextColor3 = Color3.new(1, 1, 1)
+		boxTp.Parent = main
+
+		arrowTp = Instance.new("TextButton")
+		arrowTp.Size = UDim2.new(0, 30, 0, 30)
+		arrowTp.Position = UDim2.new(1, -40, 0.5, -15)
+		arrowTp.Text = "→"
+		arrowTp.TextScaled = true
+		arrowTp.BackgroundTransparency = 1
+		arrowTp.TextColor3 = Color3.new(1, 1, 1)
+		arrowTp.Parent = main
+
+		listTp = Instance.new("Frame")
+		listTp.Size = UDim2.new(1, -30, 0, 0)
+		listTp.Visible = false
+		listTp.AutomaticSize = Enum.AutomaticSize.Y
+		listTp.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+		listTp.Parent = menu
+
+		local ls = Instance.new("UIStroke", listTp)
+		ls.Color = Color3.fromRGB(150, 150, 150)
+
+		local lc = Instance.new("UICorner", listTp)
+		lc.CornerRadius = UDim.new(0, 8)
+
+		local l = Instance.new("UIListLayout", listTp)
+		l.Parent = listTp
+
+		return boxTp, arrowTp, listTp
+	end
+
+	local function createSlider(labelText)
+		local container = Instance.new("Frame")
+		container.Size = UDim2.new(1, -30, 0, 50)
+		container.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+		container.Parent = menu
+
+		local cs = Instance.new("UIStroke", container)
+		cs.Color = Color3.fromRGB(150, 150, 150)
+
+		local cc = Instance.new("UICorner", container)
+		cc.CornerRadius = UDim.new(0, 8)
+
+		local sliderBar = Instance.new("Frame")
+		sliderBar.Size = UDim2.new(0.6, 0, 0, 6)
+		sliderBar.Position = UDim2.new(0.05, 0, 0.5, -3)
+		sliderBar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		sliderBar.Parent = container
+
+		local sliderCorner = Instance.new("UICorner", sliderBar)
+		sliderCorner.CornerRadius = UDim.new(1, 0)
+
+		local sliderKnob = Instance.new("Frame")
+		sliderKnob.Size = UDim2.new(0, 14, 0, 14)
+		sliderKnob.Position = UDim2.new(0, 0, 0.5, -7)
+		sliderKnob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+		sliderKnob.Parent = sliderBar
+
+		local knobCorner = Instance.new("UICorner", sliderKnob)
+		knobCorner.CornerRadius = UDim.new(1, 0)
+
+		local inputBox = Instance.new("TextBox")
+		inputBox.Size = UDim2.new(0.25, 0, 0.6, 0)
+		inputBox.Position = UDim2.new(0.7, 0, 0.2, 0)
+		inputBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		inputBox.TextColor3 = Color3.new(1, 1, 1)
+		inputBox.TextScaled = true
+		inputBox.Text = "10"
+		inputBox.Parent = container
+
+		local boxCorner = Instance.new("UICorner", inputBox)
+		boxCorner.CornerRadius = UDim.new(0, 4)
+
+		local boxStroke = Instance.new("UIStroke", inputBox)
+		boxStroke.Color = Color3.fromRGB(150, 150, 150)
+
+		local value = 10
+
+		local function updateSlider(newValue)
+			value = math.max(10, math.min(100, newValue))
+			local ratio = (value - 10) / 90
+			sliderKnob.Position = UDim2.new(ratio, -7, 0.5, -7)
 			inputBox.Text = tostring(value)
+			return value
+		end
+
+		local draggingSlider = false
+
+		sliderKnob.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				draggingSlider = true
+			end
+		end)
+
+		sliderKnob.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				draggingSlider = false
+			end
+		end)
+
+		UserInputService.InputChanged:Connect(function(input)
+			if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				local barSize = sliderBar.AbsoluteSize.X
+				local barPosition = sliderBar.AbsolutePosition.X
+				local mousePos = input.Position.X
+				local ratio = math.max(0, math.min(1, (mousePos - barPosition) / barSize))
+				local newValue = 10 + (ratio * 90)
+				updateSlider(newValue)
+			end
+		end)
+
+		inputBox.FocusLost:Connect(function()
+			local num = tonumber(inputBox.Text)
+			if num then
+				updateSlider(num)
+			else
+				inputBox.Text = tostring(value)
+			end
+		end)
+
+		return container, function() return value end, function(newVal) updateSlider(newVal) end
+	end
+
+	local auraToggle, auraKnob = createToggle("Red Aura")
+	local tpToggle, tpKnob = createToggle("Teleport Player")
+	boxTp, arrowTp, listTp = createSelector()
+	local distToggle, distKnob = createToggle("Show Distance")
+	local crosshairToggle, crosshairKnob = createToggle("Crosshair Circle")
+	local crosshairSliderContainer, getCrosshairSize, setCrosshairSize = createSlider("Size")
+	local aimbotToggle, aimbotKnob = createToggle("AimBot")
+
+	local function toggleLogic(toggle, knob)
+		local state = false
+		toggle.MouseButton1Click:Connect(function()
+			state = not state
+			if state then
+				knob:TweenPosition(UDim2.new(1, -22, 0.5, -10), "Out", "Quad", 0.15, true)
+				toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+			else
+				knob:TweenPosition(UDim2.new(0, 2, 0.5, -10), "Out", "Quad", 0.15, true)
+				toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+			end
+		end)
+		return function() return state end
+	end
+
+	local auraState = toggleLogic(auraToggle, auraKnob)
+	local tpState = toggleLogic(tpToggle, tpKnob)
+	local distState = toggleLogic(distToggle, distKnob)
+	local crosshairState = toggleLogic(crosshairToggle, crosshairKnob)
+	local aimbotState = toggleLogic(aimbotToggle, aimbotKnob)
+
+	local auraHighlights = {}
+	local selectedTpPlayer = nil
+	local distLabels = {}
+	local crosshairGui = nil
+	local aimbotTarget = nil
+	local invisibleParts = {}
+
+	local function fillList(list, box)
+		list:ClearAllChildren()
+		local layout = Instance.new("UIListLayout", list)
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= player then
+				local b = Instance.new("TextButton")
+				b.Size = UDim2.new(1, 0, 0, 30)
+				b.Text = p.Name
+				b.TextScaled = true
+				b.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+				b.TextColor3 = Color3.new(1, 1, 1)
+				b.Parent = list
+				b.MouseButton1Click:Connect(function()
+					box.Text = p.Name
+					list.Visible = false
+					arrowTp.Text = "→"
+				end)
+			end
+		end
+	end
+
+	arrowTp.MouseButton1Click:Connect(function()
+		listTp.Visible = not listTp.Visible
+		arrowTp.Text = listTp.Visible and "↓" or "→"
+		if listTp.Visible then
+			fillList(listTp, boxTp)
 		end
 	end)
 
-	return container, function() return value end, function(newVal) updateSlider(newVal) end
-end
-
-local auraToggle, auraKnob = createToggle("Red Aura")
-local tpToggle, tpKnob = createToggle("Teleport Player")
-local boxTp, arrowTp, listTp = createSelector()
-local distToggle, distKnob = createToggle("Show Distance")
-local crosshairToggle, crosshairKnob = createToggle("Crosshair Circle")
-local crosshairSliderContainer, getCrosshairSize, setCrosshairSize = createSlider("Size")
-local aimbotToggle, aimbotKnob = createToggle("AimBot")
-
-local function toggleLogic(toggle, knob)
-	local state = false
-	toggle.MouseButton1Click:Connect(function()
-		state = not state
-		if state then
-			knob:TweenPosition(UDim2.new(1, -22, 0.5, -10), "Out", "Quad", 0.15, true)
-			toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-		else
-			knob:TweenPosition(UDim2.new(0, 2, 0.5, -10), "Out", "Quad", 0.15, true)
-			toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+	boxTp.FocusLost:Connect(function(enterPressed)
+		if enterPressed then
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p.Name:lower() == boxTp.Text:lower() then
+					selectedTpPlayer = p
+					break
+				end
+			end
 		end
 	end)
-	return function() return state end
-end
 
-local auraState = toggleLogic(auraToggle, auraKnob)
-local tpState = toggleLogic(tpToggle, tpKnob)
-local distState = toggleLogic(distToggle, distKnob)
-local crosshairState = toggleLogic(crosshairToggle, crosshairKnob)
-local aimbotState = toggleLogic(aimbotToggle, aimbotKnob)
-
-local auraHighlights = {}
-local selectedTpPlayer = nil
-local distLabels = {}
-local crosshairGui = nil
-local aimbotTarget = nil
-local playerOriginalTransparencies = {}
-local auraUpdateTimer = 0
-
-local function fillList(list, box)
-	list:ClearAllChildren()
-	local layout = Instance.new("UIListLayout", list)
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player then
-			local b = Instance.new("TextButton")
-			b.Size = UDim2.new(1, 0, 0, 30)
-			b.Text = p.Name
-			b.TextScaled = true
-			b.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-			b.TextColor3 = Color3.new(1, 1, 1)
-			b.Parent = list
-			b.MouseButton1Click:Connect(function()
-				box.Text = p.Name
-				list.Visible = false
-				arrowTp.Text = "→"
-			end)
-		end
-	end
-end
-
-arrowTp.MouseButton1Click:Connect(function()
-	listTp.Visible = not listTp.Visible
-	arrowTp.Text = listTp.Visible and "↓" or "→"
-	if listTp.Visible then
-		fillList(listTp, boxTp)
-	end
-end)
-
-boxTp.FocusLost:Connect(function(enterPressed)
-	if enterPressed then
+	boxTp.Changed:Connect(function()
 		for _, p in ipairs(Players:GetPlayers()) do
 			if p.Name:lower() == boxTp.Text:lower() then
 				selectedTpPlayer = p
 				break
 			end
 		end
-	end
-end)
+	end)
 
-boxTp.Changed:Connect(function()
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p.Name:lower() == boxTp.Text:lower() then
-			selectedTpPlayer = p
-			break
+	local function createCrosshair()
+		if not crosshairGui then
+			crosshairGui = Instance.new("ScreenGui")
+			crosshairGui.Name = "CrosshairGui"
+			crosshairGui.ResetOnSpawn = false
+			crosshairGui.Parent = playerGui
+
+			local circle = Instance.new("Frame")
+			circle.Name = "CrosshairCircle"
+			circle.Size = UDim2.new(0, 100, 0, 100)
+			circle.Position = UDim2.new(0.5, -50, 0.5, -50)
+			circle.BackgroundTransparency = 1
+			circle.Parent = crosshairGui
+
+			local circleStroke = Instance.new("UIStroke", circle)
+			circleStroke.Color = Color3.fromRGB(255, 0, 0)
+			circleStroke.Thickness = 2
+
+			local circleCorner = Instance.new("UICorner", circle)
+			circleCorner.CornerRadius = UDim.new(1, 0)
+
+			local dot = Instance.new("Frame")
+			dot.Name = "CrosshairDot"
+			dot.Size = UDim2.new(0, 8, 0, 8)
+			dot.Position = UDim2.new(0.5, -4, 0.5, -4)
+			dot.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+			dot.Parent = circle
+
+			local dotCorner = Instance.new("UICorner", dot)
+			dotCorner.CornerRadius = UDim.new(1, 0)
+		end
+		crosshairGui.Enabled = true
+	end
+
+	local function destroyCrosshair()
+		if crosshairGui then
+			crosshairGui.Enabled = false
 		end
 	end
-end)
 
-local function createCrosshair()
-	if not crosshairGui then
-		crosshairGui = Instance.new("ScreenGui")
-		crosshairGui.Name = "CrosshairGui"
-		crosshairGui.ResetOnSpawn = false
-		crosshairGui.Parent = playerGui
-
-		local circle = Instance.new("Frame")
-		circle.Name = "CrosshairCircle"
-		circle.Size = UDim2.new(0, 100, 0, 100)
-		circle.Position = UDim2.new(0.5, -50, 0.5, -50)
-		circle.BackgroundTransparency = 1
-		circle.Parent = crosshairGui
-
-		local circleStroke = Instance.new("UIStroke", circle)
-		circleStroke.Color = Color3.fromRGB(255, 0, 0)
-		circleStroke.Thickness = 2
-
-		local circleCorner = Instance.new("UICorner", circle)
-		circleCorner.CornerRadius = UDim.new(1, 0)
-
-		local dot = Instance.new("Frame")
-		dot.Name = "CrosshairDot"
-		dot.Size = UDim2.new(0, 8, 0, 8)
-		dot.Position = UDim2.new(0.5, -4, 0.5, -4)
-		dot.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-		dot.Parent = circle
-
-		local dotCorner = Instance.new("UICorner", dot)
-		dotCorner.CornerRadius = UDim.new(1, 0)
-	end
-	crosshairGui.Enabled = true
-end
-
-local function destroyCrosshair()
-	if crosshairGui then
-		crosshairGui.Enabled = false
-	end
-end
-
-local function updateCrosshairSize()
-	if crosshairGui then
-		local size = getCrosshairSize() * 2
-		local circle = crosshairGui:FindFirstChild("CrosshairCircle")
-		if circle then
-			circle.Size = UDim2.new(0, size, 0, size)
-			circle.Position = UDim2.new(0.5, -size / 2, 0.5, -size / 2)
-		end
-	end
-end
-
-local function storePlayerTransparencies()
-	if player.Character then
-		playerOriginalTransparencies = {}
-		for _, part in ipairs(player.Character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				playerOriginalTransparencies[part] = part.Transparency
-			end
-		end
-	end
-end
-
-local function makePlayerInvisible()
-	if player.Character then
-		for _, part in ipairs(player.Character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				part.Transparency = 1
-			end
-		end
-	end
-end
-
-local function makePlayerVisible()
-	if player.Character then
-		for _, part in ipairs(player.Character:GetDescendants()) do
-			if part:IsA("BasePart") then
-				if playerOriginalTransparencies[part] ~= nil then
-					part.Transparency = playerOriginalTransparencies[part]
-				else
-					part.Transparency = 0
-				end
-			end
-		end
-	end
-end
-
-local function isEnemy(targetPlayer)
-	if targetPlayer.Character and player.Character then
-		local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-		local playerHumanoid = player.Character:FindFirstChild("Humanoid")
-		
-		if targetHumanoid and playerHumanoid then
-			if targetHumanoid:FindFirstChild("Team") and playerHumanoid:FindFirstChild("Team") then
-				return targetHumanoid.Team.Value ~= playerHumanoid.Team.Value
-			else
-				if targetPlayer:FindFirstChild("Team") and player:FindFirstChild("Team") then
-					return targetPlayer.Team.Value ~= player.Team.Value
-				end
-			end
-		end
-	end
-	return true
-end
-
-local function getNearestEnemyToMouse()
-	if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-		return nil
-	end
-
-	local playerHrp = player.Character.HumanoidRootPart
-	local cameraDirection = camera.CFrame.LookVector
-	local closestEnemy = nil
-	local closestAngle = 45
-
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player and p.Character and isEnemy(p) then
-			local enemyHrp = p.Character:FindFirstChild("HumanoidRootPart")
-			if enemyHrp then
-				local directionToEnemy = (enemyHrp.Position - playerHrp.Position).Unit
-				local angle = math.acos(math.min(1, math.max(-1, cameraDirection:Dot(directionToEnemy)))) * (180 / math.pi)
-
-				if angle < closestAngle then
-					closestAngle = angle
-					closestEnemy = p
-				end
+	local function updateCrosshairSize()
+		if crosshairGui then
+			local size = getCrosshairSize() * 2
+			local circle = crosshairGui:FindFirstChild("CrosshairCircle")
+			if circle then
+				circle.Size = UDim2.new(0, size, 0, size)
+				circle.Position = UDim2.new(0.5, -size / 2, 0.5, -size / 2)
 			end
 		end
 	end
 
-	return closestEnemy
-end
-
-local function updateAuraHighlights()
-	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-		local playerPos = player.Character.HumanoidRootPart.Position
-		local auraRange = 500
-
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				local dist = (p.Character.HumanoidRootPart.Position - playerPos).Magnitude
-
-				if dist <= auraRange then
-					if not auraHighlights[p] then
-						local hl = Instance.new("Highlight")
-						hl.FillColor = Color3.fromRGB(255, 0, 0)
-						hl.OutlineColor = Color3.fromRGB(255, 0, 0)
-						hl.Parent = p.Character
-						auraHighlights[p] = hl
+	local function makePlayerInvisible()
+		if player.Character then
+			for _, part in ipairs(player.Character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					if not invisibleParts[part] then
+						invisibleParts[part] = part.Transparency
 					end
-				else
-					if auraHighlights[p] then
-						auraHighlights[p]:Destroy()
-						auraHighlights[p] = nil
+					part.Transparency = 1
+				end
+			end
+			for _, acc in ipairs(player.Character:FindFirstChildOfClass("Accessory") or {}) do
+				if not invisibleParts[acc] then
+					invisibleParts[acc] = acc
+				end
+				acc:Destroy()
+			end
+		end
+	end
+
+	local function makePlayerVisible()
+		if player.Character then
+			for _, part in ipairs(player.Character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					if invisibleParts[part] then
+						part.Transparency = invisibleParts[part]
+					else
+						part.Transparency = 0
 					end
 				end
 			end
 		end
+		invisibleParts = {}
 	end
+
+	local function isEnemy(targetPlayer)
+		if targetPlayer.Character and player.Character then
+			local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+			local playerHumanoid = player.Character:FindFirstChild("Humanoid")
+
+			if targetHumanoid and playerHumanoid then
+				if targetHumanoid:FindFirstChild("Team") and playerHumanoid:FindFirstChild("Team") then
+					return targetHumanoid.Team.Value ~= playerHumanoid.Team.Value
+				else
+					if targetPlayer:FindFirstChild("Team") and player:FindFirstChild("Team") then
+						return targetPlayer.Team.Value ~= player.Team.Value
+					end
+				end
+			end
+		end
+		return true
+	end
+
+	local function getEnemyInLineOfSight()
+		if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+			return nil
+		end
+
+		local playerHrp = player.Character.HumanoidRootPart
+		local cameraDirection = camera.CFrame.LookVector
+		local closestEnemy = nil
+		local closestAngle = 45
+
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= player and p.Character and isEnemy(p) then
+				local enemyHrp = p.Character:FindFirstChild("HumanoidRootPart")
+				if enemyHrp then
+					local directionToEnemy = (enemyHrp.Position - playerHrp.Position).Unit
+					local angle = math.acos(math.min(1, math.max(-1, cameraDirection:Dot(directionToEnemy)))) * (180 / math.pi)
+
+					if angle < closestAngle then
+						closestAngle = angle
+						closestEnemy = p
+					end
+				end
+			end
+		end
+
+		return closestEnemy
+	end
+
+	local auraUpdateTime = 0
+
+	RunService.RenderStepped:Connect(function()
+		-- AURA COM ATUALIZAÇÃO A CADA 10 SEGUNDOS E LIMITE DE DISTÂNCIA
+		if auraState() then
+			auraUpdateTime = auraUpdateTime + RunService.RenderStepped:Wait()
+			if auraUpdateTime >= 10 then
+				auraUpdateTime = 0
+				for _, p in ipairs(Players:GetPlayers()) do
+					if p ~= player and p.Character then
+						local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
+						local targetHrp = p.Character:FindFirstChild("HumanoidRootPart")
+						if playerHrp and targetHrp then
+							local distance = (targetHrp.Position - playerHrp.Position).Magnitude
+							if distance <= 500 then
+								if not auraHighlights[p] then
+									local hl = Instance.new("Highlight")
+									hl.FillColor = Color3.fromRGB(255, 0, 0)
+									hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+									hl.Parent = p.Character
+									auraHighlights[p] = hl
+								end
+							else
+								if auraHighlights[p] then
+									auraHighlights[p]:Destroy()
+									auraHighlights[p] = nil
+								end
+							end
+						end
+					end
+				end
+			end
+		else
+			auraUpdateTime = 0
+			for _, hl in pairs(auraHighlights) do
+				if hl then hl:Destroy() end
+			end
+			auraHighlights = {}
+		end
+
+		if tpState() and selectedTpPlayer and selectedTpPlayer.Character and player.Character then
+			local hrp = selectedTpPlayer.Character:FindFirstChild("HumanoidRootPart")
+			local my = player.Character:FindFirstChild("HumanoidRootPart")
+			if hrp and my then
+				my.CFrame = hrp.CFrame
+			end
+		end
+
+		if distState() and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+					local dist = (p.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+					if not distLabels[p] then
+						local bill = Instance.new("BillboardGui")
+						bill.Size = UDim2.new(0, 100, 0, 40)
+						bill.AlwaysOnTop = true
+						bill.Parent = p.Character
+
+						local txt = Instance.new("TextLabel")
+						txt.Size = UDim2.new(1, 0, 1, 0)
+						txt.BackgroundTransparency = 1
+						txt.TextColor3 = Color3.new(1, 0, 0)
+						txt.TextScaled = true
+						txt.Parent = bill
+
+						distLabels[p] = txt
+					end
+					distLabels[p].Text = p.Name .. " Dist: " .. math.floor(dist)
+					distLabels[p].Parent.Adornee = p.Character.HumanoidRootPart
+				end
+			end
+		else
+			for _, v in pairs(distLabels) do
+				if v and v.Parent then
+					v.Parent:Destroy()
+				end
+			end
+			distLabels = {}
+		end
+
+		if crosshairState() then
+			createCrosshair()
+			updateCrosshairSize()
+		else
+			destroyCrosshair()
+		end
+
+		if aimbotState() then
+			makePlayerInvisible()
+			local targetEnemy = getEnemyInLineOfSight()
+
+			if targetEnemy and targetEnemy.Character and player.Character then
+				aimbotTarget = targetEnemy
+				local head = targetEnemy.Character:FindFirstChild("Head")
+				local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
+				if head and playerHrp then
+					-- FOCO LEVEMENTE ABAIXO DA CABEÇA (PESCOÇO)
+					local neckOffset = head.Position - (head.CFrame.UpVector * 2)
+					camera.CFrame = CFrame.new(camera.CFrame.Position, neckOffset)
+				end
+			end
+		else
+			aimbotTarget = nil
+			makePlayerVisible()
+			if player.Character and player.Character:FindFirstChild("Humanoid") then
+				camera.CameraSubject = player.Character:FindFirstChild("Humanoid")
+			end
+		end
+	end)
+
+	Players.PlayerRemoving:Connect(function(leftPlayer)
+		if auraHighlights[leftPlayer] then
+			auraHighlights[leftPlayer]:Destroy()
+			auraHighlights[leftPlayer] = nil
+		end
+		if distLabels[leftPlayer] then
+			if distLabels[leftPlayer].Parent then
+				distLabels[leftPlayer].Parent:Destroy()
+			end
+			distLabels[leftPlayer] = nil
+		end
+		if selectedTpPlayer == leftPlayer then
+			selectedTpPlayer = nil
+			boxTp.Text = ""
+		end
+	end)
+
+	button.MouseButton1Click:Connect(function()
+		menu.Visible = not menu.Visible
+	end)
 end
 
-RunService.RenderStepped:Connect(function()
-	if auraState() then
-		auraUpdateTimer = auraUpdateTimer + 1
-		if auraUpdateTimer >= 600 then
-			auraUpdateTimer = 0
-			updateAuraHighlights()
-		end
-	else
-		for _, hl in pairs(auraHighlights) do
-			if hl then hl:Destroy() end
-		end
-		auraHighlights = {}
-	end
+-- CRIAR UI INICIAL
+createUI()
 
-	if tpState() and selectedTpPlayer and selectedTpPlayer.Character and player.Character then
-		local hrp = selectedTpPlayer.Character:FindFirstChild("HumanoidRootPart")
-		local my = player.Character:FindFirstChild("HumanoidRootPart")
-		if hrp and my then
-			my.CFrame = hrp.CFrame
-		end
-	end
-
-	if distState() and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				local dist = (p.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-				if not distLabels[p] then
-					local bill = Instance.new("BillboardGui")
-					bill.Size = UDim2.new(0, 100, 0, 40)
-					bill.AlwaysOnTop = true
-					bill.Parent = p.Character
-
-					local txt = Instance.new("TextLabel")
-					txt.Size = UDim2.new(1, 0, 1, 0)
-					txt.BackgroundTransparency = 1
-					txt.TextColor3 = Color3.new(1, 0, 0)
-					txt.TextScaled = true
-					txt.Parent = bill
-
-					distLabels[p] = txt
-				end
-				distLabels[p].Text = p.Name .. " Dist: " .. math.floor(dist)
-				distLabels[p].Parent.Adornee = p.Character.HumanoidRootPart
-			end
-		end
-	else
-		for _, v in pairs(distLabels) do
-			if v and v.Parent then
-				v.Parent:Destroy()
-			end
-		end
-		distLabels = {}
-	end
-
-	if crosshairState() then
-		createCrosshair()
-		updateCrosshairSize()
-	else
-		destroyCrosshair()
-	end
-
-	if aimbotState() then
-		storePlayerTransparencies()
-		makePlayerInvisible()
-		local targetEnemy = getNearestEnemyToMouse()
-
-		if targetEnemy and targetEnemy.Character and player.Character then
-			aimbotTarget = targetEnemy
-			local neck = targetEnemy.Character:FindFirstChild("Neck")
-			local playerHrp = player.Character:FindFirstChild("HumanoidRootPart")
-			if neck and playerHrp then
-				local neckPos = neck.Position + Vector3.new(0, -1.5, 0)
-				camera.CFrame = CFrame.new(camera.CFrame.Position, neckPos)
-			end
-		end
-	else
-		aimbotTarget = nil
-		makePlayerVisible()
-		if player.Character and player.Character:FindFirstChild("Humanoid") then
-			camera.CameraSubject = player.Character:FindFirstChild("Humanoid")
-		end
-	end
-end)
-
-Players.PlayerRemoving:Connect(function(leftPlayer)
-	if auraHighlights[leftPlayer] then
-		auraHighlights[leftPlayer]:Destroy()
-		auraHighlights[leftPlayer] = nil
-	end
-	if distLabels[leftPlayer] then
-		if distLabels[leftPlayer].Parent then
-			distLabels[leftPlayer].Parent:Destroy()
-		end
-		distLabels[leftPlayer] = nil
-	end
-	if selectedTpPlayer == leftPlayer then
-		selectedTpPlayer = nil
-		boxTp.Text = ""
-	end
-end)
-
-player.CharacterAdded:Connect(function(newCharacter)
-	playerOriginalTransparencies = {}
-	for _, part in ipairs(newCharacter:GetDescendants()) do
-		if part:IsA("BasePart") then
-			playerOriginalTransparencies[part] = part.Transparency
-		end
-	end
-	
-	local screenGuiCheck = player:FindFirstChild("PlayerGui"):FindFirstChild("ModMenu")
-	if not screenGuiCheck then
-		screenGui.Parent = player:WaitForChild("PlayerGui")
-	end
-end)
-
-button.MouseButton1Click:Connect(function()
-	menu.Visible = not menu.Visible
+-- RECONECTAR MENU APÓS RESPAWN
+player.CharacterAdded:Connect(function()
+	wait(0.5)
+	createUI()
 end)
