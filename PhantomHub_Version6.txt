@@ -837,7 +837,7 @@ tabs["Buy"] = createTab("Buy ALL", "110805385284419", UDim2.new(0.08, 0, 0.32, 0
 tabs["Config"] = createTab("Config", "114794077382466", UDim2.new(0.08, 0, 0.48, 0))
 tabs["Credits"] = createTab("Credits", "99243311837005", UDim2.new(0.08, 0, 0.64, 0))
 
-createOption("Auto Collect Money", false, "Main", function(state)
+local option1 = createOption("Auto Collect Money", false, "Main", function(state)
     getgenv().AutoCollect = state
 
     if state then
@@ -919,8 +919,9 @@ createOption("Auto Collect Money", false, "Main", function(state)
         end)
     end
 end)
+option1[2].Name = "1"
 
-createOption("Auto Plot Upgrade", false, "Main", function(state)
+local option2 = createOption("Auto Plot Upgrade", false, "Main", function(state)
     getgenv().AutoUpgrade = state
 
     if state then
@@ -1011,32 +1012,30 @@ createOption("Auto Plot Upgrade", false, "Main", function(state)
         end)
     end
 end)
+option2[2].Name = "2"
 
-createOption("Auto Rebirth", false, "Main", function(state)
+local option3 = createOption("Auto Rebirth", false, "Main", function(state)
     if state then
         task.spawn(function()
             while optionStates["Auto Rebirth"] do
                 task.wait(0.1)
-                local value = optionStates["Auto Rebirth"]
-                if type(value) == "function" then value = value() end
-                if value then
-                    pcall(function()
-                        local RS = game:GetService("ReplicatedStorage")
-                        local StatsFolder = Player:WaitForChild("updateStatsFolder")
-                        local currentRebirths = StatsFolder:WaitForChild("Rebirths").Value
-                        local currentReach = StatsFolder:WaitForChild("Reach_Distance").Value
-                        local reachNeeded = currentRebirths * 30 + 80
-                        if currentReach >= reachNeeded and currentRebirths < 50 then
-                            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("StatUpgradeService"):WaitForChild("RF"):WaitForChild("Rebirth"):InvokeServer()
-                        end
-                    end)
-                end
+                pcall(function()
+                    local RS = game:GetService("ReplicatedStorage")
+                    local StatsFolder = Player:WaitForChild("updateStatsFolder")
+                    local currentRebirths = StatsFolder:WaitForChild("Rebirths").Value
+                    local currentReach = StatsFolder:WaitForChild("Reach_Distance").Value
+                    local reachNeeded = currentRebirths * 30 + 80
+                    if currentReach >= reachNeeded and currentRebirths < 50 then
+                        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("StatUpgradeService"):WaitForChild("RF"):WaitForChild("Rebirth"):InvokeServer()
+                    end
+                end)
             end
         end)
     end
 end)
+option3[2].Name = "3"
 
-createOption("Low Mode", false, "Main", function(state)
+local option4 = createOption("Low Mode", false, "Main", function(state)
     if state then
         pcall(function()
             local lighting = game:GetService("Lighting")
@@ -1074,45 +1073,114 @@ createOption("Low Mode", false, "Main", function(state)
         end)
     end
 end)
+option4[2].Name = "4"
 
-createOption("Auto Common", false, "Farm")
-createOption("Auto Uncommon", false, "Farm")
-createOption("Auto Rare", false, "Farm")
-createOption("Auto Epic", false, "Farm")
-createOption("Auto Legendary", false, "Farm")
-createOption("Auto Mythic", false, "Farm")
-createOption("Auto Secret", false, "Farm")
-createOption("Auto Ancient", false, "Farm")
-createOption("Auto Divine", false, "Farm")
+local option5 = createOption("Auto Common", false, "Farm")
+option5[2].Name = "5"
 
-createSpecialButton("Auto Rejoin", "Config", function()
+local option6 = createOption("Auto Uncommon", false, "Farm")
+option6[2].Name = "6"
+
+local option7 = createOption("Auto Rare", false, "Farm")
+option7[2].Name = "7"
+
+local option8 = createOption("Auto Epic", false, "Farm")
+option8[2].Name = "8"
+
+local option9 = createOption("Auto Legendary", false, "Farm")
+option9[2].Name = "9"
+
+local option10 = createOption("Auto Mythic", false, "Farm")
+option10[2].Name = "10"
+
+local option11 = createOption("Auto Secret", false, "Farm")
+option11[2].Name = "11"
+
+local option12 = createOption("Auto Ancient", false, "Farm")
+option12[2].Name = "12"
+
+local option13 = createOption("Auto Divine", false, "Farm")
+option13[2].Name = "13"
+
+local option14 = createOption("Auto Power", false, "Buy")
+option14[2].Name = "14"
+
+local option15 = createOption("Auto Carry", false, "Buy")
+option15[2].Name = "15"
+
+local option16 = createOption("Auto Reach", false, "Buy")
+option16[2].Name = "16"
+
+local option17 = createSpecialButton("Auto Rejoin", "Config", function()
     TeleportService:Teleport(game.PlaceId)
 end)
+MainContent:FindFirstChild("Auto Rejoin").Name = "17"
 
-createOption("Anti AFK", false, "Config")
-createOption("Anti Cheat", false, "Config")
-createOption("Infinite Jump", false, "Config")
-createOption("Enable Speed", false, "Config", function(state)
+local option18 = createOption("Anti AFK", false, "Config")
+option18[2].Name = "18"
+
+local option19 = createOption("Anti Cheat", false, "Config")
+option19[2].Name = "19"
+
+local option20 = createOption("Infinite Jump", false, "Config")
+option20[2].Name = "20"
+
+local option21 = createOption("Enable Speed", false, "Config", function(state)
     if state then
         speedValue = optionStates["Speed"]
     end
 end)
+option21[2].Name = "21"
+
 createSlider("Speed", 1, 500, 32, "Config", function(value)
     speedValue = value
 end)
-createOption("Fly", false, "Config")
+MainContent:GetChildren()[22].Name = "22"
+
+local option23 = createOption("Fly", false, "Config")
+option23[2].Name = "23"
+
 createSlider("Fly Speed", 1, 500, 32, "Config", function(value)
     flySpeed = value
 end)
-createOption("Noclip", false, "Config")
-createOption("Enable Shift Lock", false, "Config")
+MainContent:GetChildren()[24].Name = "24"
 
-createOption("Auto Power", false, "Buy")
-createOption("Auto Reach", false, "Buy")
-createOption("Auto Carry", false, "Buy")
+local option25 = createOption("Noclip", false, "Config")
+option25[2].Name = "25"
 
-createInfoBox("By: Cleiton10HDx", "Script created by this user.", "Credits", false)
-createInfoBox("Discord", "My Discord Server", "Credits", true, "https://discord.gg/72P6NhC5Pf")
+local option26 = createOption("Enable Shift Lock", false, "Config")
+option26[2].Name = "26"
+
+local option27 = createInfoBox("By: Cleiton10HDx", "Script created by this user.", "Credits", false)
+MainContent:FindFirstChild(option27 or "By: Cleiton10HDx") or (function()
+    for _, child in pairs(MainContent:GetChildren()) do
+        if child:IsA("Frame") and child:FindFirstChildOfClass("TextLabel") then
+            local titleLabel = child:FindFirstChild("Frame") or child:GetChildren()[2]
+            if titleLabel and titleLabel.Text == "By: Cleiton10HDx" then
+                child.Name = "27"
+                return
+            end
+        end
+    end
+end)()
+
+local discordChildren = MainContent:GetChildren()
+for i = #discordChildren, 1, -1 do
+    local child = discordChildren[i]
+    if child:IsA("Frame") and child:FindFirstChildOfClass("TextLabel") then
+        local hasDiscord = false
+        for _, label in pairs(child:GetDescendants()) do
+            if label:IsA("TextLabel") and label.Text:find("Discord") then
+                hasDiscord = true
+                break
+            end
+        end
+        if hasDiscord then
+            child.Name = "28"
+            break
+        end
+    end
+end
 
 local function updateSearchFilter()
     local searchText = SearchTextBox.Text:lower()
@@ -1555,21 +1623,19 @@ local function disableShiftLockSystem()
 end
 
 task.delay(0.5, function()
-    if tabs["Config"] and tabs["Config"].elements then
-        for _, element in pairs(tabs["Config"].elements) do
-            if element.Name == "Enable Shift Lock" then
-                local SwitchBG = element:FindFirstChildOfClass("TextButton")
-                if SwitchBG then
-                    SwitchBG.Activated:Connect(function()
-                        if optionStates["Enable Shift Lock"] then
-                            shiftLockSystemEnabled = true
-                            enableShiftLockSystem()
-                        else
-                            shiftLockSystemEnabled = false
-                            disableShiftLockSystem()
-                        end
-                    end)
-                end
+    for _, element in pairs(tabs["Config"].elements) do
+        if element.Name == "26" then
+            local SwitchBG = element:FindFirstChildOfClass("TextButton")
+            if SwitchBG then
+                SwitchBG.Activated:Connect(function()
+                    if optionStates["Enable Shift Lock"] then
+                        shiftLockSystemEnabled = true
+                        enableShiftLockSystem()
+                    else
+                        shiftLockSystemEnabled = false
+                        disableShiftLockSystem()
+                    end
+                end)
             end
         end
     end
