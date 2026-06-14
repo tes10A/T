@@ -1,4 +1,3 @@
-
 local Player = game.Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 local UserInputService = game:GetService("UserInputService")
@@ -9,7 +8,6 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 
--- ==================== VERIFICAÇÃO DE ID DO JOGO ====================
 local CORRECT_GAME_ID = 114640202062357
 local currentGameId = game.PlaceId
 local gameIdCheckDone = false
@@ -839,7 +837,6 @@ tabs["Buy"] = createTab("Buy ALL", "110805385284419", UDim2.new(0.08, 0, 0.32, 0
 tabs["Config"] = createTab("Config", "114794077382466", UDim2.new(0.08, 0, 0.48, 0))
 tabs["Credits"] = createTab("Credits", "99243311837005", UDim2.new(0.08, 0, 0.64, 0))
 
--- ABA MAIN
 createOption("Auto Collect Money", false, "Main", function(state)
     getgenv().AutoCollect = state
 
@@ -1016,26 +1013,26 @@ createOption("Auto Plot Upgrade", false, "Main", function(state)
 end)
 
 createOption("Auto Rebirth", false, "Main", function(state)
-    getgenv().AutoRebirth = state
-
     if state then
         task.spawn(function()
-            local RS = game:GetService("ReplicatedStorage")
-            local LP = game:GetService("Players").LocalPlayer
-            local StatsFolder = LP:WaitForChild("updateStatsFolder")
-
-            while getgenv().AutoRebirth do
+            while optionStates["Auto Rebirth"] do
                 task.wait(0.1)
-
-                pcall(function()
-                    local currentRebirths = StatsFolder:WaitForChild("Rebirths").Value
-                    local currentReach = StatsFolder:WaitForChild("Reach_Distance").Value
-                    local reachNeeded = currentRebirths * 30 + 80
-                    
-                    if currentReach >= reachNeeded and currentRebirths < 50 then
-                        game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("StatUpgradeService"):WaitForChild("RF"):WaitForChild("Rebirth"):InvokeServer()
-                    end
-                end)
+                local value = optionStates["Auto Rebirth"]
+                if type(value) == "function" then value = value() end
+                if value then
+                    pcall(function()
+                        local RS = game:GetService("ReplicatedStorage")
+                        local Knit = require(RS:WaitForChild("Packages"):WaitForChild("Knit"))
+                        local StatService = Knit.GetService("StatUpgradeService")
+                        local StatsFolder = Player:WaitForChild("updateStatsFolder")
+                        local currentRebirths = StatsFolder:WaitForChild("Rebirths").Value
+                        local currentReach = StatsFolder:WaitForChild("Reach_Distance").Value
+                        local reachNeeded = currentRebirths * 30 + 80
+                        if currentReach >= reachNeeded and currentRebirths < 50 then
+                            game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Knit"):WaitForChild("Services"):WaitForChild("StatUpgradeService"):WaitForChild("RF"):WaitForChild("Rebirth"):InvokeServer()
+                        end
+                    end)
+                end
             end
         end)
     end
@@ -1080,7 +1077,6 @@ createOption("Low Mode", false, "Main", function(state)
     end
 end)
 
--- ABA FARM (EM ORDEM CORRETA)
 createOption("Auto Common", false, "Farm")
 createOption("Auto Uncommon", false, "Farm")
 createOption("Auto Rare", false, "Farm")
@@ -1091,12 +1087,6 @@ createOption("Auto Secret", false, "Farm")
 createOption("Auto Ancient", false, "Farm")
 createOption("Auto Divine", false, "Farm")
 
--- ABA BUY (CORRIGIDA)
-createOption("Auto Power", false, "Buy")
-createOption("Auto Reach", false, "Buy")
-createOption("Auto Carry", false, "Buy")
-
--- ABA CONFIG (EM ORDEM CORRETA)
 createSpecialButton("Auto Rejoin", "Config", function()
     TeleportService:Teleport(game.PlaceId)
 end)
@@ -1119,7 +1109,10 @@ end)
 createOption("Noclip", false, "Config")
 createOption("Enable Shift Lock", false, "Config")
 
--- ABA CREDITS
+createOption("Auto Power", false, "Buy")
+createOption("Auto Reach", false, "Buy")
+createOption("Auto Carry", false, "Buy")
+
 createInfoBox("By: Cleiton10HDx", "Script created by this user.", "Credits", false)
 createInfoBox("Discord", "My Discord Server", "Credits", true, "https://discord.gg/72P6NhC5Pf")
 
@@ -1502,7 +1495,6 @@ oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     return oldNamecall(self, ...)
 end)
 
--- ==================== SHIFT LOCK (CORRIGIDO DO OUTRO ARQUIVO) ====================
 local shiftLockSystemEnabled = false
 local shiftLockActive = false
 local shiftLockGui = nil
@@ -1564,22 +1556,26 @@ local function disableShiftLockSystem()
     end
 end
 
-for _, element in pairs(tabs["Config"].elements) do
-    if element.Name == "Enable Shift Lock" then
-        local SwitchBG = element:FindFirstChildOfClass("TextButton")
-        if SwitchBG then
-            local originalConnection = SwitchBG.Activated:Connect(function()
-                if optionStates["Enable Shift Lock"] then
-                    shiftLockSystemEnabled = true
-                    enableShiftLockSystem()
-                else
-                    shiftLockSystemEnabled = false
-                    disableShiftLockSystem()
+task.delay(0.1, function()
+    if tabs["Config"] and tabs["Config"].elements then
+        for _, element in pairs(tabs["Config"].elements) do
+            if element.Name == "Enable Shift Lock" then
+                local SwitchBG = element:FindFirstChildOfClass("TextButton")
+                if SwitchBG then
+                    SwitchBG.Activated:Connect(function()
+                        if optionStates["Enable Shift Lock"] then
+                            shiftLockSystemEnabled = true
+                            enableShiftLockSystem()
+                        else
+                            shiftLockSystemEnabled = false
+                            disableShiftLockSystem()
+                        end
+                    end)
                 end
-            end)
+            end
         end
     end
-end
+end)
 
 Player.CharacterAdded:Connect(function()
     task.wait(1)
