@@ -1495,6 +1495,8 @@ end)
 
 local shiftLockSystemEnabled = false
 local shiftLockActive = false
+local shiftLockGui = nil
+local shiftLockBtn = nil
 local shiftLockConnection = nil
 
 local function getCharacterForShiftLock()
@@ -1508,6 +1510,9 @@ local function enableShiftLockSystem()
     local character, humanoid, root = getCharacterForShiftLock()
     
     shiftLockActive = true
+    if shiftLockBtn then
+        shiftLockBtn.Image = "rbxassetid://139211296111194"
+    end
     
     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
     UserInputService.MouseBehavior = Enum.MouseBehavior.Default
@@ -1534,6 +1539,9 @@ local function disableShiftLockSystem()
     local character, humanoid, root = getCharacterForShiftLock()
     
     shiftLockActive = false
+    if shiftLockBtn then
+        shiftLockBtn.Image = "rbxassetid://105987953182009"
+    end
     
     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
     UserInputService.MouseBehavior = Enum.MouseBehavior.Default
@@ -1562,7 +1570,6 @@ task.delay(0.5, function()
                         end
                     end)
                 end
-                break
             end
         end
     end
